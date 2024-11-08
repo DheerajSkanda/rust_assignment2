@@ -65,6 +65,7 @@ fn main() -> io::Result<()> {
         }
     }
 
+
     println!("Deserialized person data saved to {}", output_file);
     Ok(())
 }
