@@ -1,0 +1,20 @@
+[package]
+name = "rust_assignment2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+protobuf = "2.25"
+clap = { version = "4.0", features = ["derive"] }
+
+[build-dependencies]
+protobuf-codegen = "2.25"
+
+
+[[bin]]
+name = "serialize"
+path = "src/main.rs" # Your serialization program
+
+[[bin]]
+name = "deserialize"
+path = "src/deserialize_main.rs" # Your deserialization program

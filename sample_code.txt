@@ -1,0 +1,159 @@
+use protobuf::Message; // for protobuf serialization/deserialization
+use std::{fs::File, io::{self, Read, Write}};
+use clap::{Arg, Command};
+mod person;
+use person::Person;
+
+fn main() -> io::Result<()> {
+    // Setup command-line arguments
+    let matches = Command::new("protobuf-deserialization")
+        .about("A program to deserialize protobuf data from an input file and write to an output file")
+        .arg(
+            Arg::new("input")
+                .short('i')
+                .long("input")
+                .value_parser(clap::value_parser!(String))
+                .help("Input file containing serialized protobuf data")
+                .required(true),
+        )
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .value_parser(clap::value_parser!(String))
+                .help("Output file to write deserialized data in CSV format")
+                .required(true),
+        )
+        .get_matches();
+
+    // Get input and output file paths
+    let input_file = matches.get_one::<String>("input").unwrap();
+    let output_file = matches.get_one::<String>("output").unwrap();
+
+    // Open the input file containing serialized protobuf data
+    let mut file = File::open(input_file)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+
+    // Prepare to write deserialized data to output file
+    let mut output = File::create(output_file)?;
+
+    // Deserialize each person entry in the input file
+    let mut start = 0;
+    while start < buffer.len() {
+        // Attempt to parse a `Person` object from bytes
+        let person = match Person::parse_from_bytes(&buffer[start..]) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("Failed to deserialize person: {:?}", e);
+                break;
+            }
+        };
+
+        // Calculate the size of serialized data and adjust start
+        start += person.compute_size() as usize;
+
+        // Write deserialized data to output file in CSV format
+        writeln!(
+            output,
+            "{},{},{}",
+            person.get_last_name(),
+            person.get_first_name(),
+            person.get_date_of_birth()
+        )?;
+    }
+
+    println!("Deserialized person data saved to {}", output_file);
+    Ok(())
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use protobuf::Message; // <-- Add this line
+use std::{fs::File, io::{self, Read, Write}};
+use clap::{Arg, Command};
+mod person;
+use person::Person; // Assuming person.rs is generated from the .proto file
+
+fn main() -> io::Result<()> {
+    // Setup command-line arguments
+    let matches = Command::new("protobuf-example")
+        .about("A simple program to read input from a file and write output to another file")
+        .arg(
+            Arg::new("input")
+                .short('i')
+                .long("input")
+                .value_parser(clap::value_parser!(String))
+                .help("Input file containing person data (last_name, first_name, date_of_birth)")
+                .required(true), // This ensures the argument is required
+        )
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .value_parser(clap::value_parser!(String))
+                .help("Output file to write serialized data")
+                .required(true), // This ensures the argument is required
+        )
+        .get_matches();
+
+    // Get input and output file paths
+    let input_file = matches.get_one::<String>("input").unwrap();
+    let output_file = matches.get_one::<String>("output").unwrap();
+
+    // Open the input file
+    let mut file = File::open(input_file)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    // Prepare to write serialized data to output file
+    let mut output = File::create(output_file)?;
+
+    // Process each line of the input file
+    for line in contents.lines() {
+        let parts: Vec<&str> = line.split(',').collect();
+        if parts.len() == 3 {
+            // Create a Person instance
+            let mut person = Person::new();
+            person.set_last_name(parts[0].to_string());
+            person.set_first_name(parts[1].to_string());
+            person.set_date_of_birth(parts[2].to_string());
+
+            // Serialize the person object to bytes
+            let person_data = person.write_to_bytes().expect("Failed to serialize person");
+
+            // Write the serialized bytes to the output file
+            output.write_all(&person_data)?;
+            println!("{:?}",person_data);
+        } else {
+            eprintln!("Skipping invalid line: {}", line);
+        }
+    }
+
+    println!("Serialized person data saved to {}", output_file);
+    Ok(())
+}
+
+
